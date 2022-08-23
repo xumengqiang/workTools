@@ -359,3 +359,137 @@ bindQRCode(text) {
     });
 },
 ```
+
+## vue中使用keep-alive
+
+
+#### 简介
+keep-alive 是 Vue 的内置组件，当它包裹动态组件时，会缓存不活动的组件实例，而不是销毁它们。
+和 transition 相似，keep-alive 是一个抽象组件：它自身不会渲染成一个 DOM 元素，也不会出现在父组件链中。
+
+#### 作用
+在组件切换过程中将状态保留在内存中，防止重复渲染DOM，减少加载时间及性能消耗，提高用户体验性。
+
+#### 原理
+在 created 函数调用时将需要缓存的 VNode 节点保存在 this.cache 中／在 render（页面渲染） 时，如果 VNode 的 name 符合缓存条件（可以用 include 以及 exclude 控制），则会从 this.cache 中取出之前缓存的 VNode 实例进行渲染。
+（VNode：虚拟DOM，其实就是一个JS对象）
+#### 使用
+
+
+| 参数名  | 值 | 描述 |
+|--------|-----|-----|
+|include | 字符串或正则表达式 | 只有名称匹配的组件会被缓存。|
+|exclude | 字符串或正则表达式 | 任何名称匹配的组件都不会被缓存。|
+|max     | 数字 | 最多可以缓存多少组件实例。|
+
+- 注意: include/exclude 值是组件中的 name 命名，而不是路由中的组件 name 命名；
+
+#### 需求
+- A页面进入B页面不需要缓存
+- B页面进入C页面不需要缓存
+- C页面进入B页面需要缓存
+
+#### 生命周期函数
+
+|名称 | 描述 |
+|-----|------|
+|activated| 在 keep-alive 组件激活时调用， 该钩子函数在服务器端渲染期间不被调用。|
+|deactivated | 在 keep-alive 组件停用时调用，该钩子在服务器端渲染期间不被调用。|
+
+- 页面第一次进入，钩子的触发顺序：created->mounted->activated
+- 退出时触发 deactivated
+- 当再次进入（前进或者后退）时，只触发activated
+
+```js
+// vuex.js
+const state = {
+    cachedViews: [], // 缓存view，keepalive是AppMain组件下的
+};
+const mutations = {
+    // 添加缓存
+    ADD_CACHED_VIEW: (state, view) => {
+        if (state.cachedViews.includes(view.name)) {
+            return;
+        }
+        state.cachedViews.push(view.name);
+    },
+    // 移除缓存
+    DEL_CACHED_VIEW: (state, view) => {
+        const index = state.cachedViews.indexOf(view.name);
+        index > -1 && state.cachedViews.splice(index, 1);
+    },
+};
+const actions = {
+    // 添加缓存view
+    addCachedView({ commit }, view) {
+        return new Promise(resolve => {
+            commit('ADD_CACHED_VIEW', view);
+            resolve();
+        });
+    },
+    // 删除缓存view
+    delCachedView({ commit }, view) {
+        return new Promise(resolve => {
+            commit('DEL_CACHED_VIEW', view);
+            resolve();
+        });
+    },
+};
+
+// layout.vue 
+<keep-alive :include="cachedViews" :max="15">
+    <router-view :key="key" />
+</keep-alive>
+
+import { mapGetters } from 'vuex';
+
+computed: {
+    ...mapGetters(['cachedViews']), 
+    //刷新标识
+    key() {
+        return this.$route.path;
+    },
+},
+
+// 监听路由变化，为keepAlive：true 的路由自动添加到缓存数组
+watch: {
+    $route: {
+        immediate: true,
+        async handler(route) {
+            const {
+                name,
+                meta: { keepAlive },
+            } = route;
+            if (name && keepAlive) {
+                await this.$store.dispatch('addCachedView', route);
+            }
+        },
+    },
+},
+
+// route.js
+{
+    path: '/place_supervision',
+    component: Layout,
+    children: [
+        {
+            path: '',
+            name: 'place_supervision',
+            component: () => import('@/views/place/place_supervision.vue'),
+            meta: { title: '监管的场所', keepAlive: true },
+        },
+    ],
+},
+
+// place_supervision.vue
+
+async beforeRouteLeave(to, from, next) {
+    // 去这些界面我需要缓存
+    const routerArr = ['/c页面', '/d页面'];
+    if (!routerArr.includes(to.path)) {
+        // 不在缓存列表中，从cachedViews缓存列表中移除
+        await this.$store.dispatch('delCachedView', from);
+    }
+    next();
+},
+```
