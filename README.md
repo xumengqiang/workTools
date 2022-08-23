@@ -217,3 +217,121 @@ module.exports = {
 };
 
 ```
+
+## 身份证校验
+
+```js
+export const isIdCard = card => {
+    // 身份证号
+    if (!card) return true;
+    let num = card.toUpperCase();
+    // 身份证号码为15位或者18位，15位时全为数字，18位前17位为数字，最后一位是校验位，可能为数字或字符X。
+    if (!/(^\d{15}$)|(^\d{17}([0-9]|X)$)/.test(num)) {
+        return false;
+    }
+    // 校验位按照ISO 7064:1983.MOD 11-2的规定生成，X可以认为是数字10。
+    // 下面分别分析出生日期和校验位
+    let len;
+    let re;
+    let birthday;
+    let sex;
+    len = num.length;
+    if (len == 15) {
+        // 获取出生日期
+        birthday = `19${card.substring(6, 8)}-${card.substring(8, 10)}-${card.substring(10, 12)}`;
+        // 获取性别
+        sex = parseInt(card.substr(14, 1)) % 2 == 1 ? 'M' : 'F';
+
+        re = new RegExp(/^(\d{6})(\d{2})(\d{2})(\d{2})(\d{3})$/);
+        let arrSplit = num.match(re);
+
+        // 检查生日日期是否正确
+        let dtmBirth = new Date(`19${arrSplit[2]}/${arrSplit[3]}/${arrSplit[4]}`);
+        let bGoodDay;
+        bGoodDay = dtmBirth.getYear() == Number(arrSplit[2]) && dtmBirth.getMonth() + 1 == Number(arrSplit[3]) && dtmBirth.getDate() == Number(arrSplit[4]);
+        if (!bGoodDay) {
+            return false;
+        } else {
+            // 将15位身份证转成18位
+            // 校验位按照ISO 7064:1983.MOD 11-2的规定生成，X可以认为是数字10。
+            let arrInt = new Array(7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2);
+            let arrCh = new Array('1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2');
+            let nTemp = 0;
+            let i;
+
+            num = `${num.substr(0, 6)}19${num.substr(6, num.length - 6)}`;
+            for (i = 0; i < 17; i++) {
+                nTemp += num.substr(i, 1) * arrInt[i];
+            }
+            num += arrCh[nTemp % 11];
+        }
+    } else if (len == 18) {
+        // 获取出生日期
+        birthday = `${card.substring(6, 10)}-${card.substring(10, 12)}-${card.substring(12, 14)}`;
+        // 获取性别
+        sex = parseInt(card.substr(16, 1)) % 2 == 1 ? 'M' : 'F';
+
+        re = new RegExp(/^(\d{6})(\d{4})(\d{2})(\d{2})(\d{3})([0-9]|X)$/);
+        let arrSplit = num.match(re);
+
+        // 检查生日日期是否正确
+        let dtmBirth = new Date(`${arrSplit[2]}/${arrSplit[3]}/${arrSplit[4]}`);
+        let bGoodDay;
+        bGoodDay = dtmBirth.getFullYear() == Number(arrSplit[2]) && dtmBirth.getMonth() + 1 == Number(arrSplit[3]) && dtmBirth.getDate() == Number(arrSplit[4]);
+        if (!bGoodDay) {
+            return false;
+        } else {
+            // 检验18位身份证的校验码是否正确。
+            // 校验位按照ISO 7064:1983.MOD 11-2的规定生成，X可以认为是数字10。
+            let valnum;
+            let arrInt = new Array(7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2);
+            let arrCh = new Array('1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2');
+            let nTemp = 0;
+            let i;
+            for (i = 0; i < 17; i++) {
+                nTemp += num.substr(i, 1) * arrInt[i];
+            }
+            valnum = arrCh[nTemp % 11];
+            if (valnum != num.substr(17, 1)) {
+                return false;
+            }
+        }
+    }
+    return {
+        birthday,
+        sex,
+    };
+};
+
+// 正确返回
+let res = isIdCard('370902197612012131')
+console.log(res); // {birthday: '1976-12-01', sex: 'M'}
+
+// 错误返回
+let res = isIdCard('370902197612012130')
+console.log(res); // false
+```
+
+## 车牌号验证方法
+
+```js
+export const isCar = Number => {
+    let vehicleNumber = Number.toUpperCase();
+    var xreg = /^[京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领A-Z]{1}[A-Z]{1}(([0-9]{5}[DF]$)|([DF][A-HJ-NP-Z0-9][0-9]{4}$))/;
+
+    var creg = /^[京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领A-Z]{1}[A-Z]{1}[A-HJ-NP-Z0-9]{4}[A-HJ-NP-Z0-9挂学警港澳]{1}$/;
+
+    if (vehicleNumber.length == 7) {
+        return creg.test(vehicleNumber);
+    } else if (vehicleNumber.length == 8) {
+        return xreg.test(vehicleNumber);
+    } else {
+        return false;
+    }
+};
+// 校验
+let res = isCar('京A12345')   // true
+let res = isCar('京A123456')  // false
+let res = isCar('京AD12347')  // true
+let res = isCar('京AB12347')  // false
+```
