@@ -335,3 +335,27 @@ let res = isCar('京A123456')  // false
 let res = isCar('京AD12347')  // true
 let res = isCar('京AB12347')  // false
 ```
+## vue绘制二维码
+
+```js
+1、安装插件
+npm install qrcodejs2
+2、页面中使用
+<div id="qrCode"></div>
+import QRCode from 'qrcodejs2';
+
+// 绘制二维码；text绘制的内容
+bindQRCode(text) {
+    // codeHtml.innerHTML = '';是为了防止重复绘制
+    const codeHtml = document.getElementById('qrCode');
+    codeHtml.innerHTML = '';
+    new QRCode('qrCode', {
+        text,
+        width: 200,
+        height: 200,
+        colorDark: '#333333', //二维码颜色
+        colorLight: '#ffffff', //二维码背景色
+        correctLevel: QRCode.CorrectLevel.L, //容错率，L/M/H
+    });
+},
+```
