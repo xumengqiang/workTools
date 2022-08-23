@@ -167,3 +167,53 @@ change: debounce((val) => { console.log(val); }, 1000)  // change是你的方法
 // vue3中使用
 const change = debounce((val) => { console.log(val);}, 1000) // change是你的方法名,val接收的参数
 ```
+## vue移动端适配rem
+
+#### 什么是rem？
+- rem是响应式布局的一种，是相对于根元素(即html元素)font-size计算值的倍数的一个css单位。因为rem的特性相对长度单位，常被用来做移动适配，pc端页面不推荐使用rem
+- rem布局的本质是等比缩放，一般是基于宽度针对设计稿的宽度 利用js动态获取屏幕的宽度
+- rem是相对于根元素的字体大小的单位，也就是html的font-size大小，浏览器默认的字体大小是16px，所以默认的1rem=16px
+
+#### 如何根据设计图设计rem比例
+```js
+// rem中的核心公式
+
+/**
+ * document.documentElement.style.fontSize  html的字体大小
+ * document.documentElement.clientWidth     可视窗口的大小
+ * 7.5 设计图的宽度除以100  (设计图默认按750计算)
+ */
+document.documentElement.style.fontSize = document.documentElement.clientWidth  / 7.5 + 'px'
+
+如果可视窗口是375，设计图纸是750,
+那么1rem=（375px 除以 750px ）乘以100是为了好计算px
+这里的1rem=50px
+
+如果一个九宫格中的图标是60px宽，70px高，那么就是60 除以 计算出来的px值（比例大小 +‘px）就等于图标宽度所需要的rem值，高度也一样
+也就是60px 除以 50px =1.2rem
+```
+
+
+```js
+// 安装两个插件
+amfe-flexible
+postcss-px2rem-exclude
+
+// main.js配置
+// 移动端引入amfe-flexible依赖 并在postcss.config.js中打开px2rem插件
+import 'amfe-flexible';
+
+// postcss.config.js中配置
+module.exports = {
+    plugins: {
+        autoprefixer: {},
+        //移动端项目开启此插件  将px转为rem
+        'postcss-px2rem-exclude': {
+            remUnit: '75', // 为了方便计算  1rem = 75px
+            //白名单
+            exclude: /node_modules/i,
+        },
+    },
+};
+
+```
