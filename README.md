@@ -493,3 +493,36 @@ async beforeRouteLeave(to, from, next) {
     next();
 },
 ```
+
+## Eruda调试工具
+
+- 连续点击十次出现调试工具
+
+```js
+// main.js
+
+// 增加调试信息
+(function () {
+    var src = "https://cdn.jsdelivr.net/npm/eruda@2.5.0/eruda.min.js";
+    if (sessionStorage.getItem("active-eruda") != "true") return;
+    document.write("<scr" + 'ipt src="' + src + '"></scr' + "ipt>");
+    document.write("<scr" + "ipt>eruda.init();</scr" + "ipt>");
+})();
+
+// 页面中添加一个点击事件
+
+var count = 0; //记录点击次数
+// 打开调试器
+showEruda() {
+    if (count >= 10) {
+        var eruda = sessionStorage.getItem('active-eruda');
+        if (!eruda || eruda === 'false') {
+            sessionStorage.setItem('active-eruda', 'true')
+        } else {
+            sessionStorage.setItem('active-eruda', 'false')
+        }
+        location.reload()
+    }
+    count++
+},
+```
