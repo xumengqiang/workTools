@@ -526,3 +526,33 @@ showEruda() {
     count++
 },
 ```
+## css选择器种类
+```js
+
+1、交集选择器
+div.red {color:red}
+<div class="red"></div>
+
+2、并集选择器
+.red,p,div,span{color:green}
+
+3、子元素选择器
+div > span {color:red}
+
+4、后代元素选择器
+div span {color:red}
+
+5、选择下一个兄弟（后面紧挨着的一个）
+p + span {color:red}
+
+6、选择下一个兄弟（后面所有的）
+p ~ span {color:red}
+
+7、 属性名选择器
+p[title] {color:red}
+p[title='abc'] {color:red}
+p[title^=abc] {color：red}
+p[title$=abc] {color:red}
+p[title*=abc] {color:red}
+
+```
